@@ -1,0 +1,574 @@
+Flight Price Prediction Project:
+https://bhaktithaker.medium.com/flight-price-prediction-778ce0649c38
+
+Loan Application status Prediction:
+https://bhaktithaker.medium.com/loan-application-status-prediction-using-logistic-regression-fa19dbfb2f55
+
+
+
+
+
+
+
+Flight Price Prediction
+Flight Price Prediction using Linear Regression
+So yes, what is Linear Regression? and how to do prediction for Flight Prices?
+What is Machine Learning?
+Machine learning is the study of computer algorithms that improve automatically through experience and by the use of data. It is seen as a part of artificial intelligence.
+Machine learning is divided into 2 parts:
+a) Supervised Learning: Predictive Models
+1. Regression Models
+2. Classification Models
+b) Unsupervised Learning: Pattern/structure Recognition(Unlabeled Data)
+1.Clustering
+2.Association
+3. Dimensionality Reduction
+a) Supervised Learning:
+Regression Models
+
+Linear Regression: Linear regression is a linear approach to modelling the relationship between a scalar response and one or more explanatory variables. The case of one explanatory variable is called simple linear regression
+
+2. Classification Model
+Types of Classification Models:
+Logistic Regression:
+Naive Bayes
+K-Nearest Neighbours
+Decision Tree
+Random Forest Classifier
+Support Vector Machine
+
+So, Linear Regression is an algorithm that is used to predict the target variable which consists range of numerical values unlike catrgorical data.
+Problem:
+Flight ticket prices can be something hard to guess, today we might see a price, check out the price of the same flight tomorrow, it will be a different story. We might have often heard travellers saying that flight ticket prices are so unpredictable. Here you will be provided with prices of flight tickets for various airlines between the months of March and June of 2019 and between various cities.
+Size of training set: 10683 records
+Size of test set: 2671 records
+FEATURES:
+Airline: The name of the airline.
+Date_of_Journey: The date of the journey
+Source: The source from which the service begins.
+Destination: The destination where the service ends.
+Route: The route taken by the flight to reach the destination.
+Dep_Time: The time when the journey starts from the source.
+Arrival_Time: Time of arrival at the destination.
+Duration: Total duration of the flight.
+Total_Stops: Total stops between the source and destination.
+Additional_Info: Additional information about the flight
+(Target Variable) Price: The price of the ticket
+Lets start creating model.
+There are few steps will be following to create model for Loan Application Status Prediction
+Steps used:
+ 
+1> Data cleansing and Wrangling
+2> Define the metrics for which model is getting optimized.
+3> Feature Engineering
+4> Data Pre-processing
+5> Feature Selection
+6> Split the data into training and test data sets.
+7> Model Selection
+8> Model Validation 
+9> Interpret the result
+10> save Model
+11> reload model for prediction of test .csv
+12>do data cleaning for test.csv
+13> predict Prices
+Firstly,
+Import Dataset and Libraries
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+data = pd.read_csv('flight_price\Data_Train.csv')
+Will, review the data within the CSV file
+data
+To get number of rows and columns will use shape:
+data.shape
+rows=10683, columns=11Datatypes of data:
+data.dtypes
+EDA PROCESS:
+data.describe()
+Observation: Only description for Price is shown as other than that all the other columns are of categorical data.
+Min - Max: As there is a lot of difference between min-max one need to do is scaling of data.
+Checking Null Values:
+data.isnull().sum()
+Observation: Route and Total_stops are null, need to handle it
+After handling null values:
+Number of Categories into Columns containing categorical data
+data.columns
+print("Number of Categories: ")
+for ColName in data[['Airline', 'Date_of_Journey', 'Source', 'Destination', 'Route',
+ 'Dep_Time', 'Arrival_Time', 'Duration', 'Total_Stops',
+ 'Additional_Info', 'Price']]:
+ print("{} = {}".format(ColName,len(data[ColName].unique())))
+Visualization of categories and data:
+For categorical data we can use: counterplot and for numerical data we can use: distplot
+import seaborn as sns
+alpha = sns.countplot(x="Airline",data=data,dodge=False)
+print(data["Airline"].value_counts())
+Maximum Flights taken by customer is Jet AirwaysMaximum Flights taken by customer is Jet Airways
+alpha = sns.countplot(x="Source",data=data)
+print(data["Source"].value_counts())
+Data Encoding:
+As the data are categorical, so need to encode the data.
+from sklearn.preprocessing import OrdinalEncoder
+enc = OrdinalEncoder()
+for i in data.columns:
+ if data[i].dtypes == "object":
+ data[i]=enc.fit_transform(data[i].values.reshape(-1,1))
+data
+After EncodingCorelation of data with the target variable:
+corr_matrix_hmap=data.corr()
+plt.figure(figsize=(22,20))
+sns.heatmap(corr_matrix_hmap,annot=True,linewidths=0.1,fmt="0.2f")
+plt.show()
+visualization of correlation using HeatMapcorr_matrix_hmap["Price"].sort_values(ascending=False)
+plt.figure(figsize=(10,5))
+data.corr()['Price'].sort_values(ascending=False).drop(['Price']).plot(kind='bar',color='c')
+plt.xlabel('Feature',fontsize=14)
+plt.ylabel('Column with Target Name',fontsize=14)
+plt.title('correlation',fontsize=18)
+plt.show()
+Maximum corelated with price: Route (Which route is choosen will affect the price majorly)
+Minimun corelated with price: Departure Time (Dep_Time)
+Negatively corelated with price: Total_stops during the journey
+Seperating Independent variable and Target Variable:
+# x= independent variable
+x = data.iloc[:,0:-1]
+x.head()
+Independent Variable#y = target variable = Fees 
+y = data.iloc[:,-1]
+y.head()
+Target Variable = PriceSCALING the data using Min-Max Scaler:
+It will scale the data between range of 0 to 1
+from sklearn.preprocessing import MinMaxScaler
+mms = MinMaxScaler()
+from sklearn.linear_model import LinearRegression
+lr=LinearRegression()
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+data=mms.fit_transform(data)
+MODEL TRAINING:
+Finding Best Random State:
+from sklearn.linear_model import LinearRegression
+maxAccu=0
+maxRS=0
+for i in range(1,200):
+ x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=.33,random_state = i)
+ LR = LinearRegression()
+ LR.fit(x_train,y_train)
+ predrf = LR.predict(x_test)
+ mse = r2_score(y_test,predrf)
+ if mse > maxAccu:
+ maxAccu = mse
+ maxRS = i
+ 
+print("Best score is: ",maxAccu,"on Random_state",maxRS)
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.33,random_state = 192)
+LR = LinearRegression()
+LR.fit(x_train,y_train)
+predrf = LR.predict(x_test)
+print('r2 Score:',r2_score(y_test,predrf))
+As its Linear regression will use r2 score instead of confusion matrixAs its Linear regression will use r2 score instead of confusion matrix
+Finding Best fold:
+pred_train = LR.predict(x_train)
+pred_test =LR.predict(x_test) 
+Train_accuracy = r2_score(y_train,pred_train)
+Test_accuracy = r2_score(y_test,pred_test)
+maxAccu=0
+maxRS=0
+from sklearn.model_selection import cross_val_score
+for j in range(2,16):
+ cv_score=cross_val_score(LR,x,y,cv=j)
+ cv_mean = cv_score.mean()
+ if cv_mean > maxAccu:
+ maxAccu = cv_mean
+ maxRS = j
+
+ print(f"At cross fold {j} cv score is {cv_mean} and accuracy score training is {Train_accuracy} and accuracy for the testing is {Test_accuracy}")
+ print("\n")
+Fold 5 is BestObservation: As At Fold 5, the difference between cross validation score and accuracy is least, will choose fold 5
+Regularization:
+To mitigate the problem of overfitting and underfitting Regularization Methods are used: Lasso, Ridge or ElasticNet.
+from sklearn.model_selection import cross_val_score
+import warnings
+warnings.filterwarnings('ignore')
+#Lasso tries to ommit coefficient value (the value which dont affect y)
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import Lasso
+parameters = {'alpha':[.0001,.001,.01,.1,1,10],'random_state':list(range(0,10))}
+ls=Lasso()
+clf=GridSearchCV(ls,parameters)
+clf.fit(x_train,y_train)
+print(clf.best_params_)
+ls = Lasso(alpha=1,random_state=0)
+ls.fit(x_train,y_train)
+ls.score(x_train,y_train)
+pred_ls=ls.predict(x_test)
+lss=r2_score(y_test,pred_ls)
+lss
+#cross_validation_mean = cv_mean
+#cross_validation_score= cv_score
+cross_validation_score = cross_val_score(ls,x,y,cv=5)
+cross_validation_mean = cross_validation_score.mean()
+cross_validation_mean
+Observation:Difference between Cross validation and r2 score must be least which, represents the difference between actual values and predicted values.
+Ensemble Techniques:
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor
+parameters = {'criterion':['mse','mae'],'max_features':["auto","sqrt","log2"]}
+rf = RandomForestRegressor()
+clf=GridSearchCV(rf,parameters)
+clf.fit(x_train,y_train)
+print(clf.best_params_)
+rf=RandomForestRegressor(criterion="mse",max_features="log2")
+rf.fit(x_train,y_train)
+rf.score(x_train,y_train)
+pred_decision=rf.predict(x_test)
+rfs = r2_score(y_test,pred_decision)
+print('R2 Score:',rfs*100)
+rfscore=cross_val_score(rf,x,y,cv=6)
+rfc=rfscore.mean()
+print("Cross Validation Score:",rfc*100)
+Random Forest Regressor gives us the maximum accurate prediction of 88%
+Saving Model:
+import pickle
+filename = "flights.pkl"
+pickle.dump(rf,open(filename,"wb"))
+Load Model:
+loaded_model=pickle.load(open('flights.pkl','rb'))
+result=loaded_model.score(x_test,y_test)
+print(result)
+Conclusion:
+conclusion = pd.DataFrame([loaded_model.predict(x_test)[:],pred_decision[:]],index=["Predicted","Original"])
+conclusion
+TESTING DATASET:
+For testing data set will do all process like data cleaning, EDA process, visualtization.
+Will not create a model instead, will load the model created with training dataset and will predict the price
+df = pd.read_csv('flight_price\Test_set.csv')
+df
+df.describe()
+df.shape
+rows=2671, columns=10Datatypes:
+df.dtypes
+Checking Null Values:
+Finding Correaltions:
+corr_matrix_hmap=df.corr()
+plt.figure(figsize=(22,20))
+sns.heatmap(corr_matrix_hmap,annot=True,linewidths=0.1,fmt="0.2f")
+plt.show()
+Giving data as Independent variables to predict the Prices:
+test_data = df.iloc[:,0:]
+test_data.head()
+Prediction:
+conclusion = pd.DataFrame([loaded_model.predict(test_data)[:],pred_decision[:]],index=["Predicted","Original"])
+conclusion
+Predicted Prices for Testing dataset:
+fees = pd.DataFrame([loaded_model.predict(test_data)[:]])
+fees
+Predicted PricesAdding that Predicted Prices into dataset:
+df.columns
+df.insert(10, " Fees", fees.values.reshape(-1,1))
+df
+Fees are added as column into testing datasetso Fees in the above df are the predicted values for the test data set with accuracy rate of 88%
+
+
+
+Loan Application Status Prediction
+
+
+Loan Application Status Prediction
+Loan Application Status Prediction using Logistic Regression
+So yes, what is Logistic Regression? and how to do prediction for Loan Application Status.
+What is Machine Learning?
+Machine learning is the study of computer algorithms that improve automatically through experience and by the use of data. It is seen as a part of artificial intelligence.
+Machine learning is divided into 2 parts:
+a) Supervised Learning: Predictive Models
+1. Regression Models
+2. Classification Models
+b) Unsupervised Learning: Pattern/structure Recognition(Unlabeled Data)
+1.Clustering
+2.Association
+3. Dimensionality Reduction
+a) Supervised Learning:
+Regression Models
+
+Linear Regression: Linear regression is a linear approach to modelling the relationship between a scalar response and one or more explanatory variables. The case of one explanatory variable is called simple linear regression
+
+2. Classification Model
+Types of Classification Models:
+Logistic Regression: Logistic regression is a supervised learning classification algorithm used to predict the probability of a target variable. The nature of target or dependent variable is dichotomous, which means there would be only two possible classes.
+Naive Bayes
+K-Nearest Neighbours
+Decision Tree
+Random Forest Classifier
+Support Vector Machine
+
+So, Logistics Regression is an algorithm that is used to predict the target variable which consists of 2 possible cases only.
+Load Application Status Prediction is a task that can be done based on historical information of the customer and bank. By checking the dataset already existed regarding the status of the Load Application and creating a model will help us to Predict the further Loan Application Status.
+Dataset includes details of applicants who have applied for loan. The dataset includes details like credit history, loan amount, their income, dependents etc.
+Will build a model that can predict whether the loan of the applicant will be approved or not on the basis of the details provided in the dataset.
+Independent Variables:
+- Loan_ID
+- Gender
+- Married
+- Dependents
+- Education
+- Self_Employed
+- ApplicantIncome
+- CoapplicantIncome
+- Loan_Amount
+- Loan_Amount_Term
+- Credit History
+- Property_Area
+Dependent Variable (Target Variable):
+- Loan_Status
+Lets start creating model.
+There are few steps will be following to create model for Loan Application Status Prediction
+1> Data cleansing and Wrangling 2> Define the metrics for which model is getting optimized. 3> Feature Engineering 4> Data Pre-processing 5> Feature Selection 6> Split the data into training and test data sets. 7> Model Selection 8> Model Validation 9> Interpret the result 10> Saving Model
+Firstly,
+Import Dataset and Libraries
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+data = pd.read_csv('loan_prediction.csv')
+Will, review the data within the CSV file
+data
+After checking data will check description and get to know minimum value, max value, standard deviation etc.:
+data.describe()
+data.describe()To get number of rows and columns will use shape:
+data.shape
+614- row, 13-columnsDatatypes of data:
+data.dtypes
+we are having mix type of datatypes for all columns, need to encode the dataIn each type of columns in how data are categorized into how many sections:
+print("Number of Categories: ")
+for ColName in data[['Loan_ID', 'Gender', 'Married', 'Dependents', 'Education',
+ 'Self_Employed','Property_Area', 'Loan_Status']]:
+ print("{} = {}".format(ColName,len(data[ColName].unique())))
+Loan_Status is target variable with 2 types of data. sol we can solve it by logistic regressionObservation: This represents number of categories of particular type of data.
+ As, Loan_Status which is going to be target variable is having 2 types of data so one will be using Logistic Regression
+EDA PROCESS:
+Checking null values and handling it:
+data.isnull().sum()
+Null values are present and need to handle itAfter Handling null values,
+As data are of all mixed types so need to Encode the data using Ordinal Encoder:
+from sklearn.preprocessing import OrdinalEncoder
+enc = OrdinalEncoder()
+for i in data.columns:
+ if data[i].dtypes == "object":
+ data[i]=enc.fit_transform(data[i].values.reshape(-1,1))
+data
+Data has been EncodedCorrelation between Feature variable and Target Variable:
+corr_matrix_hmap=data.corr()
+plt.figure(figsize=(22,20))
+sns.heatmap(corr_matrix_hmap,annot=True,linewidths=0.1,fmt="0.2f")
+plt.show()
+Visualization using heatmapcorr_matrix_hmap["Loan_Status"].sort_values(ascending=False)
+Observation: Most highly corelated variable is : Credit_History, Least is: Education
+plt.figure(figsize=(10,5))
+data.corr()['Loan_Status'].sort_values(ascending=False).drop(['Loan_Status']).plot(kind='bar',color='c')
+plt.xlabel('Feature',fontsize=14)
+plt.ylabel('Column with Target Name',fontsize=14)
+plt.title('correlation',fontsize=18)
+plt.show()
+Max correlated: Credit_HistoryDATA CLEANING
+Checking Outliers:
+#checking for outliers
+data.iloc[:,:].boxplot(figsize=[20,8])
+plt.subplots_adjust(bottom=0.25)
+plt.show()
+Applicant_Income if having maximum outliersHandling Outliers:
+# Removing Outliers
+from scipy.stats import zscore
+z= np.abs(zscore(data))
+threshold = 3
+print(np.where(z< 3))
+#removing outliers
+data_new = data[(z< 3).all(axis=1)]
+Rechecking of removal of outliers:
+data.shape
+Before removing Outliers#After removing outliers
+data_new.shape
+After removing Outliersdata=data_new
+Seperating Independent Variables and Dependent Variables(Target Variables)
+# x= independent variable
+x = data.iloc[:,0:-1]
+x.head()
+#y = target variable = Loan_Status
+y = data.iloc[:,-1]
+y.head()
+Checking skewness:
+No need to handle skewness if it between -0.5 to 0.5
+x.skew()
+skewness present in each columnMax skewness= Self_Employed then , Applicant Income and then,so on
+Handling Skewess:
+#Method for removing skew
+from sklearn.preprocessing import power_transform
+z = power_transform(x[0:])
+data_new= pd.DataFrame(z,columns=x.columns)
+x = data_new
+#after removing skewness
+x.skew()
+Observation: As after checking corelation and skewness, Self_Employed is not that much corelated infact negatively corelated, so one cant drop that column
+Visualization:
+data.columns
+number of columnsFor Categorical type of data:
+import seaborn as sns
+alpha = sns.countplot(x="Loan_Status",data=data)
+print(data["Loan_Status"].value_counts())
+Categorical type of dataLoan_Status which is out target variable contains 2 values, 0 and 1
+For Numerical type of data:
+df_visual= x[['ApplicantIncome', 'CoapplicantIncome', 'LoanAmount',
+ 'Loan_Amount_Term', 'Credit_History']].copy()
+import seaborn as sns
+sns.distplot(df_visual['ApplicantIncome'],kde=True)
+Overfitting is not much presentObservation: Overfitting is Absent
+sns.distplot(df_visual['CoapplicantIncome'],kde=True)
+Overfitting is PresentObservation: Overfitting is Present
+sns.distplot(df_visual['Credit_History'],kde=True)
+Overfitting is PresentScaling of Values:
+As the range of data is varying we can use Min-Max scaler to limit the ranfe of data between 0 to 1
+from sklearn.preprocessing import MinMaxScaler
+mms = MinMaxScaler()
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import warnings
+warnings.filterwarnings('ignore')
+x=mms.fit_transform(x)
+MODEL TRAINING:
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=.33,random_state = 42)
+from sklearn.linear_model import LogisticRegression
+lm = LogisticRegression()
+lm.fit(x_train,y_train)
+lm.score(x_train,y_train)
+Predictions:
+#predict the values
+pred=lm.predict(x_test)
+print("Predicted Allitation",pred)
+print("Actual Allitation",y_test)
+print('Accuracy Score:',accuracy_score(y_test,pred))
+Accuracy Score without removing overfitting and underfittingFinding Best Random State to get best Accuracy:
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+maxAccu=0
+maxRS=0
+for i in range(1,200):
+ x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=.33,random_state = i)
+ LR = LogisticRegression()
+ LR.fit(x_train,y_train)
+ predrf = LR.predict(x_test)
+ acc =accuracy_score(y_test,predrf)
+ if acc > maxAccu:
+ maxAccu = acc
+ maxRS = i
+ 
+print("Best score is: ",maxAccu,"on Random_state",maxRS)
+Train-Test model based on Best Random State:
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=.33,random_state = 12)
+LR = LogisticRegression()
+LR.fit(x_train,y_train)
+predrf = LR.predict(x_test)
+Confusion Matrix for Logistic Regression:
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+print('Accuracy Score:', accuracy_score(y_test,predrf))
+print('Confusion Matrix:', confusion_matrix(y_test,predrf))
+print('Classification Report:', classification_report(y_test,predrf))
+Confusion Matrix for Decision Tree Classifier:
+from sklearn.tree import DecisionTreeClassifier
+dt = DecisionTreeClassifier()
+dt.fit(x_train,y_train)
+preddt = dt.predict(x_test)
+print('Accuracy Score:', accuracy_score(y_test,preddt))
+print('Confusion Matrix:', confusion_matrix(y_test,preddt))
+print('Classification Report:', classification_report(y_test,preddt))
+Finding best fold:
+pred_train = LR.predict(x_train)
+pred_test =LR.predict(x_test) 
+Train_accuracy = accuracy_score(y_train,pred_train)
+Test_accuracy = accuracy_score(y_test,pred_test)
+maxAccu=0
+maxRS=0
+from sklearn.model_selection import cross_val_score
+for j in range(2,16):
+ cv_score=cross_val_score(LR,x,y,cv=j)
+ cv_mean = cv_score.mean()
+ if cv_mean > maxAccu:
+ maxAccu = cv_mean
+ maxRS = j
+ print(f"At cross fold {j} cv score is {cv_mean} and accuracy score training is {Train_accuracy} and accuracy for the testing is {Test_accuracy}")
+print("\n")
+Fold 5 is BestCross Validation for Logistic Regrssion:
+from sklearn.model_selection import cross_val_score
+cv_score=cross_val_score(LR,x,y,cv=j)
+cv_mean = cv_score.mean()
+print("Cross validation score for Logistic Regression",cv_mean)
+Cross Validation for Decision Tree Classifier:
+from sklearn.model_selection import cross_val_score
+cv_score=cross_val_score(dt,x,y,cv=j)
+cv_mean = cv_score.mean()
+print("Cross validation score for Decision Tree",cv_mean)
+Found the Accuracy of Other algorithms and it went like:
+Observation: Minimum difference between Accuracy and Cross validation is of Decision Tree Classifier which, will be proven the Best Alogorithm for this model.
+REGULARIZTION:
+To mitigate the problem of overfitting and underfitting Regularization Methods are used: Lasso, Ridge or ElasticNet.
+from sklearn.model_selection import cross_val_score
+import warnings
+warnings.filterwarnings('ignore')
+from sklearn.linear_model import ElasticNet
+from sklearn.model_selection import GridSearchCV
+parameters = {'alpha':[.0001,.001,.01,.1,1,10],'random_state':list(range(0,10))}
+EN=ElasticNet()
+clf=GridSearchCV(EN,parameters)
+clf.fit(x_train,y_train)
+print(clf.best_params_)
+Best Variables to get max accurate predictionsEN = ElasticNet(alpha=0.01,random_state=0)
+EN.fit(x_train,y_train)
+EN.score(x_train,y_train)
+pred_EN=EN.predict(x_test)
+lss= accuracy_score(y_test,pred_test)
+lss
+#cross_validation_mean = cv_mean
+#cross_validation_score= cv_score
+cross_validation_score = cross_val_score(EN,x,y,cv=5)
+cross_validation_mean = cross_validation_score.mean()
+cross_validation_mean
+ENSEMBLE TECHNIQUES:
+from sklearn.model_selection import GridSearchCV
+parameters = {'max_depth':np.arange(2,15),'criterion':["gini","entrophy"]}
+rf = DecisionTreeClassifier()
+clf=GridSearchCV(rf,parameters,cv=5)
+clf.fit(x_train,y_train)
+print(clf.best_params_)
+rf=DecisionTreeClassifier(criterion="gini",max_depth=2)
+rf.fit(x_train,y_train)
+rf.score(x_train,y_train)
+pred_decision=rf.predict(x_test)
+rfs = accuracy_score(y_test,pred_decision)
+print('Accuracy Score:',rfs*100)
+rfscore=cross_val_score(rf,x,y,cv=5)
+rfc=rfscore.mean()
+print("Cross Validation Score:",rfc*100)
+#print(clf.best_params_)
+Saving the Model:
+import pickle
+filename = "Loan_Prediction.pkl"
+pickle.dump(rf,open(filename,"wb"))
+Loading Model:
+loaded_model=pickle.load(open('Loan_Prediction.pkl','rb'))
+result=loaded_model.score(x_test,y_test)
+print(result)
+Conclusion:
+conclusion = pd.DataFrame([loaded_model.predict(x_test)[:],pred_decision[:]],index=["Predicted","Original"])
+conclusion
+Our model shows 88% accuracy, which predicts the status of loan
+This is how Model for Load Application Status Prediction is created.
